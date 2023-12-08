@@ -1,4 +1,4 @@
-# Easy OpenAI
+# Ez OpenAI
 
 My opinion of the `openai` Python library is best illustrated by the fact that, if you
 ask ChatGPT about it, it will usually hallucinate a more reasonable API. So, I wrote
@@ -64,3 +64,5 @@ ass.ask("Hi, what's the weather like in Thessaloniki right now?")
 > I'm getting the weather wooooooooo
 > "It's 26 degrees centigrade right now in Thessaloniki."
 ```
+
+gg ez
