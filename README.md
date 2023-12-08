@@ -10,7 +10,7 @@ instigate the robot uprising myself.
 Run this somewhere:
 
 ```
-pip install easy-openai
+pip install ez-openai
 ```
 
 
@@ -18,11 +18,11 @@ pip install easy-openai
 
 ### Basic usage
 
-Using Easy OpenAI is (hopefully) straightforward, otherwise I've failed at the one thing
+Using Ez OpenAI is (hopefully) straightforward, otherwise I've failed at the one thing
 I've set out to make:
 
 ```python
-from easy_openai import Assistant
+from ez_openai import Assistant
 
 # To use a previously-created assistant:
 ass = Assistant("asst_someassistantid)
@@ -42,7 +42,7 @@ ass.delete()
 No more wizardry, just plain Python functions:
 
 ```python
-from easy_openai import Assistant, openai_function
+from ez_openai import Assistant, openai_function
 
 @openai_function(descriptions={
         "city": "The city to get the weather for.",
