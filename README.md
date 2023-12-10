@@ -47,12 +47,13 @@ No more wizardry, just plain Python functions:
 
 ```python
 from ez_openai import Assistant, openai_function
+from enum import Enum
 
 @openai_function(descriptions={
         "city": "The city to get the weather for.",
         "unit": "The temperature unit , either `c` or `f`.",
     })
-def get_weather(city: str, unit: str):
+def get_weather(city: str, unit: Enum("unit", ["c", "f"])):
     # ...do some magic here to get the weather...
     print(f"I'm getting the weather for {city} woooooo")
     return {"temperature": 26, "humidity": "60%"}

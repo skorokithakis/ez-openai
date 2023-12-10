@@ -1,7 +1,21 @@
+import enum
 import inspect
 from functools import wraps
+from typing import Any
 
-TYPE_MAP = {"str": "string", "int": "integer"}
+
+def _openai_type_for_python_type(param) -> dict[str, Any]:
+    type_map = {"str": "string", "int": "integer"}
+
+    type_dict: dict[str, Any] = {}
+    if isinstance(param.annotation, enum.EnumType):
+        type_dict["type"] = "string"
+        type_dict["enum"] = [x.name for x in param.annotation]  # type: ignore
+    else:
+        type_dict["type"] = type_map.get(
+            param.annotation.__name__, param.annotation.__name__
+        )
+    return type_dict
 
 
 def openai_function(descriptions=dict[str, str]):
@@ -14,17 +28,14 @@ def openai_function(descriptions=dict[str, str]):
             if param.annotation == inspect.Parameter.empty:
                 raise ValueError(f"Parameter is untyped: {f.__name__}({param.name})")
 
-            if param.name not in descriptions:
+            if param.name not in descriptions:  # type: ignore
                 raise ValueError(
                     f"Parameter has no description: {f.__name__}({param.name})"
                 )
 
-            arguments[param.name] = {
-                "type": TYPE_MAP.get(
-                    param.annotation.__name__, param.annotation.__name__
-                ),
-                "description": descriptions[param.name],
-            }
+            arguments[param.name] = _openai_type_for_python_type(param)
+            if param.name in descriptions:
+                arguments[param.name]["description"] = descriptions[param.name]
             if param.default == inspect.Parameter.empty:
                 required_arguments.append(param.name)
 
