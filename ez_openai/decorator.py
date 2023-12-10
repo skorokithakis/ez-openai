@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
 
-TYPE_MAP = {"str": "string"}
+TYPE_MAP = {"str": "string", "int": "integer"}
 
 
 def openai_function(descriptions=dict[str, str]):
