@@ -1,9 +1,10 @@
 # Ez OpenAI
 
-My opinion of the `openai` Python library is best illustrated by the fact that, if you
+My opinion of the `openai` Python library is best illustrated by the fact that if you
 ask ChatGPT about it, it will usually hallucinate a more reasonable API. So, I wrote
 this library, because if I had to manually poll for a tool update again I would
 instigate the robot uprising myself.
+
 
 ## Installation
 
@@ -25,10 +26,13 @@ I've set out to make:
 from ez_openai import Assistant
 
 # To use a previously-created assistant:
-ass = Assistant("asst_someassistantid)
+ass = Assistant("asst_someassistantid")
 
 # To create a new one:
-ass = Assistant.create(system="Some system instructions.")
+ass = Assistant.create(
+    name="Weatherperson",
+    instructions="You are a helpful weatherperson.",
+)
 
 # You can store the ID for later.
 assistant_id = ass.id
@@ -50,19 +54,28 @@ from ez_openai import Assistant, openai_function
     })
 def get_weather(city: str, unit: str):
     # ...do some magic here to get the weather...
-    print("I'm getting the weather wooooooooo")
-    return {"temperature": 26, "unit": "c"}
+    print(f"I'm getting the weather for {city} woooooo")
+    return {"temperature": 26, "humidity": "60%"}
 
 
 ass = Assistant.create(
+    name="Weatherperson",
     system="You are a helpful weatherperson.",
     functions=[get_weather]
 )
 
+conversation = ass.conversation.create()
+
+# Similarly, you can store the ID to fetch later:
+old_conversation = ass.conversation.get(old_conversation.id)
+
 # The library will handle all the background function calls itself:
-ass.ask("Hi, what's the weather like in Thessaloniki right now?")
-> I'm getting the weather wooooooooo
-> "It's 26 degrees centigrade right now in Thessaloniki."
+conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right now?")
+> I'm getting the weather for Thessaloniki woooooo
+> I'm getting the weather for Athens woooooo
+> "The weather today in both Thessaloniki and Athens is quite similar, with a
+   temperature of 26°C and a humidity level at 60%. Enjoy a pleasant and comfortable
+   day!"
 ```
 
 gg ez
