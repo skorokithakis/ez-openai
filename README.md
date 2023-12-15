@@ -62,7 +62,7 @@ def get_weather(city: str, unit: Enum("unit", ["c", "f"])):
 
 ass = Assistant.create(
     name="Weatherperson",
-    system="You are a helpful weatherperson.",
+    instructions="You are a helpful weatherperson.",
     functions=[get_weather]
 )
 
