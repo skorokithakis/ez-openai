@@ -26,7 +26,7 @@ I've set out to make:
 from ez_openai import Assistant
 
 # To use a previously-created assistant:
-ass = Assistant("asst_someassistantid")
+ass = Assistant.get("asst_someassistantid")
 
 # To create a new one:
 ass = Assistant.create(
@@ -54,6 +54,7 @@ from enum import Enum
         "unit": "The temperature unit , either `c` or `f`.",
     })
 def get_weather(city: str, unit: Enum("unit", ["c", "f"])):
+    """Get the weather for a given city, and in the given unit."""
     # ...do some magic here to get the weather...
     print(f"I'm getting the weather for {city} woooooo")
     return {"temperature": 26, "humidity": "60%"}
