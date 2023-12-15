@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add the Enum type. [Stavros Korokithakis]
+
+
 ## v0.0.1 (2023-12-10)
 
 ### Fixes

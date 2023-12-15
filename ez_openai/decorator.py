@@ -5,7 +5,11 @@ from typing import Any
 
 
 def _openai_type_for_python_type(param) -> dict[str, Any]:
-    type_map = {"str": "string", "int": "integer"}
+    type_map = {
+        "bool": "boolean",
+        "int": "integer",
+        "str": "string",
+    }
 
     type_dict: dict[str, Any] = {}
     if isinstance(param.annotation, enum.EnumType):
