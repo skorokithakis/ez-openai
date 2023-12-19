@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix bug with Enums not having the correct type. [Stavros Korokithakis]
+
+
 ## v0.0.2 (2023-12-15)
 
 ### Features
