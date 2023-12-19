@@ -12,7 +12,7 @@ def _openai_type_for_python_type(param) -> dict[str, Any]:
     }
 
     type_dict: dict[str, Any] = {}
-    if isinstance(param.annotation, enum.EnumType):
+    if isinstance(param.annotation, enum.EnumMeta):
         type_dict["type"] = "string"
         type_dict["enum"] = [x.name for x in param.annotation]  # type: ignore
     else:
