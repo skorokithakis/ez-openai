@@ -66,6 +66,10 @@ ass = Assistant.create(
     functions=[get_weather]
 )
 
+# Or, if you already have one, you can fetch it (but still
+# need to specify the functions).
+ass = Assistant.get("asst_O5ZAsccgOOtgjrcgHhUMloSA", functions=[get_weather])
+
 conversation = ass.conversation.create()
 
 # Similarly, you can store the ID to fetch later:
