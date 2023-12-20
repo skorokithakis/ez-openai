@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add `get_and_modify` function. [Stavros Korokithakis]
+
+
 ## v0.0.3 (2023-12-19)
 
 ### Fixes
