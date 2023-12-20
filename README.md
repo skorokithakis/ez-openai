@@ -84,4 +84,19 @@ conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right n
    day!"
 ```
 
+Because assistants change (eg if you want to add some more functions), and it's tedious
+to create new ones every time, there's a helper method that will update an assistant
+with new functions/instructions:
+
+```python
+from ez_openai import Assistant
+
+ass = Assistant.get_and_modify(
+    id="asst_someassistantid",
+    name="Weatherperson",
+    instructions="These are your new instructions.",
+    functions=[get_weather, some_new_function]
+)
+```
+
 gg ez

@@ -148,6 +148,27 @@ class Assistant:
         return assistant
 
     @classmethod
+    def get_and_modify(
+        cls,
+        id: str,
+        name: str,
+        instructions: str = "",
+        model="gpt-4-1106-preview",
+        functions: None | list[Callable] = None,
+        api_key: str = "",
+    ) -> "Assistant":
+        """Retrieve a previously-created assistant, and modify it to the parameters."""
+        assistant = cls.get(id, functions=functions, api_key=api_key)
+        assistant._client.beta.assistants.update(
+            id,
+            instructions=instructions,
+            name=name,
+            tools=[fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
+            model=model,
+        )
+        return assistant
+
+    @classmethod
     def create(
         cls,
         name: str,
