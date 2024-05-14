@@ -83,11 +83,11 @@ conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right n
    temperature of 26°C and a humidity level at 60%. Enjoy a pleasant and comfortable
    day!"
 
-It also supports images:
+# It also supports images:
 
 conversation.ask("What's in this image?", image_url="https://www.someimage.com/")
 
-or:
+# or:
 
 conversation.ask("What's in this image?", image_file="file.jpg")
 ```
