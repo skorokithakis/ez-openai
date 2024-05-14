@@ -7,6 +7,8 @@ import openai
 
 from .decorator import openai_function  # noqa
 
+DEFAULT_MODEL = "gpt-4o"
+
 
 class Conversation:
     """
@@ -52,8 +54,30 @@ class Conversation:
     def delete(self) -> None:
         self._assistant._client.beta.threads.delete(self.id)
 
-    def ask(self, message) -> str:
-        self._client.beta.threads.messages.create(self.id, role="user", content=message)
+    def ask(
+        self,
+        message: str | None,
+        image_url: str | None = None,
+        image_file: bytes | None = None,
+    ) -> str:
+        content = []
+        file = None
+        if message is not None:
+            content.append({"type": "text", "text": message})
+        if image_url is not None:
+            content.append({"type": "image_url", "image_url": {"url": image_url}})  # type: ignore
+        if image_file is not None:
+            file = self._client.files.create(
+                file=open(image_file, "rb"), purpose="assistants"
+            )
+            content.append(
+                {
+                    "type": "image_file",
+                    "image_file": {"file_id": file.id},  # type: ignore
+                }
+            )
+
+        self._client.beta.threads.messages.create(self.id, role="user", content=content)
 
         last_run = self._client.beta.threads.runs.create(
             thread_id=self.id, assistant_id=self._assistant.id
@@ -87,9 +111,17 @@ class Conversation:
                     self._thread.id, limit=4
                 )
                 response = thread_messages.data[0].content[0].text.value
+                if file:
+                    # Clean up.
+                    self._client.files.delete(file.id)
                 return response
-            else:
-                raise ValueError("ERROR: Got unknown run status.")
+            elif last_run.status == "failed":
+                if file:
+                    # Clean up.
+                    self._client.files.delete(file.id)
+                raise ValueError(
+                    f"ERROR: Got unknown run status: {last_run.last_error.message}"
+                )
 
 
 class Assistant:
@@ -153,8 +185,8 @@ class Assistant:
         id: str,
         name: str,
         instructions: str = "",
-        model="gpt-4-1106-preview",
-        temperature: float = 1.0,
+        model=DEFAULT_MODEL,
+        temperature: float | None = None,
         response_format: Any = None,
         functions: None | list[Callable] = None,
         api_key: str = "",
@@ -165,11 +197,12 @@ class Assistant:
             "instructions": instructions,
             "name": name,
             "tools": [fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
-            "temperature": temperature,
             "model": model,
         }
         if response_format:
             params["response_format"] = response_format
+        if temperature:
+            params["temperature"] = temperature
         assistant._client.beta.assistants.update(id, **params)
         return assistant
 
@@ -178,7 +211,7 @@ class Assistant:
         cls,
         name: str,
         instructions: str = "",
-        model="gpt-4o",
+        model=DEFAULT_MODEL,
         temperature: float = 1.0,
         response_format: Any = None,
         functions: None | list[Callable] = None,

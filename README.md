@@ -82,6 +82,14 @@ conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right n
 > "The weather today in both Thessaloniki and Athens is quite similar, with a
    temperature of 26°C and a humidity level at 60%. Enjoy a pleasant and comfortable
    day!"
+
+It also supports images:
+
+conversation.ask("What's in this image?", image_url="https://www.someimage.com/")
+
+or:
+
+conversation.ask("What's in this image?", image_file="file.jpg")
 ```
 
 Because assistants change (eg if you want to add some more functions), and it's tedious
