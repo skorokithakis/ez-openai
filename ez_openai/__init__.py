@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Callable
+from typing import Callable, Any
 
 import openai
 
@@ -154,18 +154,23 @@ class Assistant:
         name: str,
         instructions: str = "",
         model="gpt-4-1106-preview",
+        temperature: float = 1.0,
+        response_format: Any = None,
         functions: None | list[Callable] = None,
         api_key: str = "",
     ) -> "Assistant":
         """Retrieve a previously-created assistant, and modify it to the parameters."""
         assistant = cls.get(id, functions=functions, api_key=api_key)
-        assistant._client.beta.assistants.update(
-            id,
-            instructions=instructions,
-            name=name,
-            tools=[fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
-            model=model,
-        )
+        params = {
+            "instructions": instructions,
+            "name": name,
+            "tools": [fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
+            "temperature": temperature,
+            "model": model,
+        }
+        if response_format:
+            params["response_format"] = response_format
+        assistant._client.beta.assistants.update(id, **params)
         return assistant
 
     @classmethod
@@ -173,18 +178,24 @@ class Assistant:
         cls,
         name: str,
         instructions: str = "",
-        model="gpt-4-1106-preview",
+        model="gpt-4o",
+        temperature: float = 1.0,
+        response_format: Any = None,
         functions: None | list[Callable] = None,
         api_key: str = "",
     ) -> "Assistant":
         """Create an assistant."""
         assistant = cls(api_key=api_key, functions=functions)
-        assistant._assistant = assistant._client.beta.assistants.create(
-            instructions=instructions,
-            name=name,
-            model=model,
-            tools=[fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
-        )
+        params = {
+            "instructions": instructions,
+            "name": name,
+            "model": model,
+            "temperature": temperature,
+            "tools": [fn._openai_fn for fn in assistant._functions.values()],  # type: ignore
+        }
+        if response_format:
+            params["response_format"] = response_format
+        assistant._assistant = assistant._client.beta.assistants.create(**params)
         return assistant
 
     def delete(self):
