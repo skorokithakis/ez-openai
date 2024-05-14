@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add vision support. [Stavros Korokithakis]
+
+
 ## v0.0.4 (2023-12-20)
 
 ### Features

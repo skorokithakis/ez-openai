@@ -111,14 +111,8 @@ class Conversation:
                     self._thread.id, limit=4
                 )
                 response = thread_messages.data[0].content[0].text.value
-                if file:
-                    # Clean up.
-                    self._client.files.delete(file.id)
                 return response
             elif last_run.status == "failed":
-                if file:
-                    # Clean up.
-                    self._client.files.delete(file.id)
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
                 )
