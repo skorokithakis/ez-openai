@@ -7,6 +7,10 @@
 
 * Add vision support. [Stavros Korokithakis]
 
+### Fixes
+
+* Don't delete files mid-run, as that makes the run fail. [Stavros Korokithakis]
+
 
 ## v0.0.4 (2023-12-20)
 
