@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ez-openai"
-version = "0.0.4"
+version = "0.0.5"
 description = "A more reasonable OpenAI API."
 authors = ["Stavros Korokithakis <hi@stavros.io>"]
 repository = "https://github.com/skorokithakis/ez-openai/"
