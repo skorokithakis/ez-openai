@@ -135,6 +135,7 @@ class Assistant:
 
         self._client = openai.OpenAI(api_key=api_key)
         self.__assistant = None
+        self._init_params = None
 
         if not functions:
             functions = []
@@ -142,24 +143,35 @@ class Assistant:
 
     @property
     def id(self) -> str:
+        self._initialize_assistant()
         return self._assistant.id
 
     @property
     def conversation(self) -> Conversation:
+        self._initialize_assistant()
         return Conversation(assistant=self, functions=self._functions)
 
     @property
     def _assistant(self):
-        if self.__assistant is None:
-            raise ValueError(
-                "Cannot work with an uninitialized assistant. Either specify an "
-                "assistant ID or call .create()."
-            )
+        self._initialize_assistant()
         return self.__assistant
 
     @_assistant.setter
     def _assistant(self, assistant):
         self.__assistant = assistant
+
+    def _initialize_assistant(self, eager=False):
+        if self.__assistant is None or eager:
+            if self._init_params:
+                if self._init_params.get("method") == "create":
+                    self.__assistant = self._client.beta.assistants.create(**self._init_params["params"])
+                elif self._init_params.get("method") == "get":
+                    self.__assistant = self._client.beta.assistants.retrieve(self._init_params["params"]["id"])
+                elif self._init_params.get("method") == "get_and_modify":
+                    assistant_id = self._init_params["params"].pop("id")
+                    self.__assistant = self._client.beta.assistants.update(assistant_id, **self._init_params["params"])
+            else:
+                raise ValueError("Assistant initialization parameters not set.")
 
     @classmethod
     def get(
@@ -167,10 +179,13 @@ class Assistant:
         id: str,
         functions: None | list[Callable] = None,
         api_key: str = "",
+        eager: bool = False,
     ) -> "Assistant":
         """Retrieve a previously-created assistant by ID."""
         assistant = cls(api_key=api_key, functions=functions)
-        assistant._assistant = assistant._client.beta.assistants.retrieve(id)
+        assistant._init_params = {"method": "get", "params": {"id": id}, "eager": eager}
+        if eager:
+            assistant._initialize_assistant(eager=True)
         return assistant
 
     @classmethod
@@ -184,9 +199,10 @@ class Assistant:
         response_format: Any = None,
         functions: None | list[Callable] = None,
         api_key: str = "",
+        eager: bool = False,
     ) -> "Assistant":
         """Retrieve a previously-created assistant, and modify it to the parameters."""
-        assistant = cls.get(id, functions=functions, api_key=api_key)
+        assistant = cls(api_key=api_key, functions=functions)
         params = {
             "instructions": instructions,
             "name": name,
@@ -197,7 +213,9 @@ class Assistant:
             params["response_format"] = response_format
         if temperature:
             params["temperature"] = temperature
-        assistant._client.beta.assistants.update(id, **params)
+        assistant._init_params = {"method": "get_and_modify", "params": params, "eager": eager}
+        if eager:
+            assistant._initialize_assistant(eager=True)
         return assistant
 
     @classmethod
@@ -210,6 +228,7 @@ class Assistant:
         response_format: Any = None,
         functions: None | list[Callable] = None,
         api_key: str = "",
+        eager: bool = False,
     ) -> "Assistant":
         """Create an assistant."""
         assistant = cls(api_key=api_key, functions=functions)
@@ -222,7 +241,9 @@ class Assistant:
         }
         if response_format:
             params["response_format"] = response_format
-        assistant._assistant = assistant._client.beta.assistants.create(**params)
+        assistant._init_params = {"method": "create", "params": params, "eager": eager}
+        if eager:
+            assistant._initialize_assistant(eager=True)
         return assistant
 
     def delete(self):
