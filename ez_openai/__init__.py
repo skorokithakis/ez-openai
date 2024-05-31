@@ -1,7 +1,11 @@
 import json
 import os
 import time
-from typing import Callable, Any
+from typing import Callable, Any, Generator
+from openai.types.beta.threads import Message
+from openai.types.beta.threads import MessageDelta
+from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
+
 
 import openai
 
@@ -116,6 +120,92 @@ class Conversation:
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
                 )
+
+    def ask_stream(
+        self,
+        message: str | None,
+        image_url: str | None = None,
+        image_file: bytes | None = None,
+    ) -> Generator[MessageDelta, None, Message]:
+        content = []
+        file = None
+        if message is not None:
+            content.append({"type": "text", "text": message})
+        if image_url is not None:
+            content.append({"type": "image_url", "image_url": {"url": image_url}})  # type: ignore
+        if image_file is not None:
+            file = self._client.files.create(
+                file=open(image_file, "rb"), purpose="assistants"
+            )
+            content.append(
+                {
+                    "type": "image_file",
+                    "image_file": {"file_id": file.id},  # type: ignore
+                }
+            )
+
+        self._client.beta.threads.messages.create(
+            self.id,
+            role="user",
+            content=content,
+        )
+
+        run_tool_event: ThreadRunRequiresAction = None
+
+        with self._client.beta.threads.runs.stream(
+            thread_id=self.id,
+            assistant_id=self._assistant.id,
+        ) as stream:
+            for event in stream:
+                match event.event:
+                    case "thread.message.delta":
+                        yield event.data
+                    case "thread.message.completed":
+                        return event.data
+                    case "thread.run.requires_action":
+                        run_tool_event = event
+                        break
+                    case _:
+                        continue
+
+        while run_tool_event is not None:
+            tool_outputs = []
+
+            for (
+                fn_call
+            ) in run_tool_event.data.required_action.submit_tool_outputs.tool_calls:
+                # Run the functions, one by one, and collect the results.
+                function = fn_call.function
+                r = self._functions[function.name](**json.loads(function.arguments))
+                tool_outputs.append(
+                    {
+                        "tool_call_id": fn_call.id,
+                        "output": json.dumps(r),
+                    }
+                )
+
+            run_id: str = run_tool_event.data.id
+            run_tool_event = None
+
+            # Submit the outputs of the functions to the assistant.
+            with self._client.beta.threads.runs.submit_tool_outputs_stream(
+                thread_id=self.id,
+                run_id=run_id,
+                tool_outputs=tool_outputs,
+            ) as stream:
+                for event in stream:
+                    match event.event:
+                        case "thread.message.delta":
+                            yield event.data
+                        case "thread.message.completed":
+                            return event.data
+                        case "thread.run.requires_action":
+                            run_tool_event = event
+                            break
+                        case _:
+                            continue
+
+        return None
 
 
 class Assistant:
