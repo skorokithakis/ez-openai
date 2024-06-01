@@ -58,12 +58,7 @@ class Conversation:
     def delete(self) -> None:
         self._assistant._client.beta.threads.delete(self.id)
 
-    def ask(
-        self,
-        message: str | None,
-        image_url: str | None = None,
-        image_file: bytes | None = None,
-    ) -> str:
+    def _gather_content(self, message, image_url, image_file):
         content = []
         file = None
         if message is not None:
@@ -80,6 +75,24 @@ class Conversation:
                     "image_file": {"file_id": file.id},  # type: ignore
                 }
             )
+        return content
+
+    def _gather_tool_outputs(self, last_run: ThreadRunRequiresAction):
+        tool_outputs = []
+        for fn_call in last_run.required_action.submit_tool_outputs.tool_calls:
+            # Run the functions, one by one, and collect the results.
+            function = fn_call.function
+            r = self._functions[function.name](**json.loads(function.arguments))
+            tool_outputs.append({"tool_call_id": fn_call.id, "output": json.dumps(r)})
+        return tool_outputs
+
+    def ask(
+        self,
+        message: str | None,
+        image_url: str | None = None,
+        image_file: bytes | None = None,
+    ) -> str:
+        content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(self.id, role="user", content=content)
 
@@ -95,14 +108,7 @@ class Conversation:
                 time.sleep(1)
 
             if last_run.status == "requires_action":  # type: ignore[attr-defined]
-                tool_outputs = []
-                for fn_call in last_run.required_action.submit_tool_outputs.tool_calls:
-                    # Run the functions, one by one, and collect the results.
-                    function = fn_call.function
-                    r = self._functions[function.name](**json.loads(function.arguments))
-                    tool_outputs.append(
-                        {"tool_call_id": fn_call.id, "output": json.dumps(r)}
-                    )
+                tool_outputs = self._gather_tool_outputs(last_run)
 
                 last_run = self._client.beta.threads.runs.submit_tool_outputs(
                     thread_id=self.id,
@@ -127,22 +133,7 @@ class Conversation:
         image_url: str | None = None,
         image_file: bytes | None = None,
     ) -> Generator[MessageDelta, None, Message]:
-        content = []
-        file = None
-        if message is not None:
-            content.append({"type": "text", "text": message})
-        if image_url is not None:
-            content.append({"type": "image_url", "image_url": {"url": image_url}})  # type: ignore
-        if image_file is not None:
-            file = self._client.files.create(
-                file=open(image_file, "rb"), purpose="assistants"
-            )
-            content.append(
-                {
-                    "type": "image_file",
-                    "image_file": {"file_id": file.id},  # type: ignore
-                }
-            )
+        content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(
             self.id,
@@ -174,15 +165,7 @@ class Conversation:
             for (
                 fn_call
             ) in run_tool_event.data.required_action.submit_tool_outputs.tool_calls:
-                # Run the functions, one by one, and collect the results.
-                function = fn_call.function
-                r = self._functions[function.name](**json.loads(function.arguments))
-                tool_outputs.append(
-                    {
-                        "tool_call_id": fn_call.id,
-                        "output": json.dumps(r),
-                    }
-                )
+                tool_outputs = self._gather_tool_outputs(run_tool_event.data)
 
             run_id: str = run_tool_event.data.id
             run_tool_event = None
