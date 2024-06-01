@@ -5,6 +5,8 @@ from typing import Callable, Any, Generator
 from openai.types.beta.threads import Message
 from openai.types.beta.threads import MessageDelta
 from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
+from openai.lib.streaming import AssistantStreamManager
+from openai.lib.streaming import AssistantEventHandler
 
 
 import openai
@@ -141,54 +143,40 @@ class Conversation:
             content=content,
         )
 
-        run_tool_event: ThreadRunRequiresAction = None
-
-        with self._client.beta.threads.runs.stream(
-            thread_id=self.id,
-            assistant_id=self._assistant.id,
-        ) as stream:
-            for event in stream:
-                match event.event:
-                    case "thread.message.delta":
-                        yield event.data
-                    case "thread.message.completed":
-                        return event.data
-                    case "thread.run.requires_action":
-                        run_tool_event = event
-                        break
-                    case _:
-                        continue
-
-        while run_tool_event is not None:
-            tool_outputs = []
-
-            for (
-                fn_call
-            ) in run_tool_event.data.required_action.submit_tool_outputs.tool_calls:
-                tool_outputs = self._gather_tool_outputs(run_tool_event.data)
-
-            run_id: str = run_tool_event.data.id
-            run_tool_event = None
-
-            # Submit the outputs of the functions to the assistant.
-            with self._client.beta.threads.runs.submit_tool_outputs_stream(
+        stream_manager: AssistantStreamManager[AssistantEventHandler] = (
+            self._client.beta.threads.runs.stream(
                 thread_id=self.id,
-                run_id=run_id,
-                tool_outputs=tool_outputs,
-            ) as stream:
-                for event in stream:
+                assistant_id=self._assistant.id,
+            )
+        )
+
+        tool_outputs = []
+        while True:
+            with stream_manager as stream:
+                while True:
+                    event = next(stream)
                     match event.event:
                         case "thread.message.delta":
                             yield event.data
                         case "thread.message.completed":
                             return event.data
                         case "thread.run.requires_action":
-                            run_tool_event = event
+                            tool_outputs = self._gather_tool_outputs(event.data)
+                            # Break the inner loop to reset the stream
                             break
                         case _:
                             continue
 
-        return None
+            # Create a new stream with the updated tool outputs
+            if tool_outputs:
+                stream_manager = (
+                    self._client.beta.threads.runs.submit_tool_outputs_stream(
+                        thread_id=self.id,
+                        run_id=event.data.id,
+                        tool_outputs=tool_outputs,
+                    )
+                )
+                tool_outputs = []
 
 
 class Assistant:
