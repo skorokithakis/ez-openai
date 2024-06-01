@@ -54,7 +54,7 @@ def test_ask_stream(assistant):
     except StopIteration as e:
         message = e.value
 
-    assert "Hello" in events[1].delta.content[0].text.value
+    assert "Hello" in events[0].delta.content[0].text.value
     assert " World" in events[1].delta.content[0].text.value
     assert "!" in events[2].delta.content[0].text.value
     assert "Hello World!" in message.content[0].text.value
