@@ -1,7 +1,13 @@
 import json
 import os
 import time
-from typing import Callable, Any
+from typing import Callable, Any, Generator
+from openai.types.beta.threads import Message
+from openai.types.beta.threads import MessageDelta
+from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
+from openai.lib.streaming import AssistantStreamManager
+from openai.lib.streaming import AssistantEventHandler
+
 
 import openai
 
@@ -54,12 +60,8 @@ class Conversation:
     def delete(self) -> None:
         self._assistant._client.beta.threads.delete(self.id)
 
-    def ask(
-        self,
-        message: str | None,
-        image_url: str | None = None,
-        image_file: bytes | None = None,
-    ) -> str:
+    def _gather_content(self, message, image_url, image_file):
+        """Gather the content for a message to send to the OpenAI assistant."""
         content = []
         file = None
         if message is not None:
@@ -76,6 +78,25 @@ class Conversation:
                     "image_file": {"file_id": file.id},  # type: ignore
                 }
             )
+        return content
+
+    def _call_tools(self, run: ThreadRunRequiresAction):
+        """Go through the tool calls requested by the AI, call the relevant functions, and return the results."""
+        tool_outputs = []
+        for fn_call in run.required_action.submit_tool_outputs.tool_calls:
+            # Run the functions, one by one, and collect the results.
+            function = fn_call.function
+            r = self._functions[function.name](**json.loads(function.arguments))
+            tool_outputs.append({"tool_call_id": fn_call.id, "output": json.dumps(r)})
+        return tool_outputs
+
+    def ask(
+        self,
+        message: str | None,
+        image_url: str | None = None,
+        image_file: bytes | None = None,
+    ) -> str:
+        content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(self.id, role="user", content=content)
 
@@ -91,14 +112,7 @@ class Conversation:
                 time.sleep(1)
 
             if last_run.status == "requires_action":  # type: ignore[attr-defined]
-                tool_outputs = []
-                for fn_call in last_run.required_action.submit_tool_outputs.tool_calls:
-                    # Run the functions, one by one, and collect the results.
-                    function = fn_call.function
-                    r = self._functions[function.name](**json.loads(function.arguments))
-                    tool_outputs.append(
-                        {"tool_call_id": fn_call.id, "output": json.dumps(r)}
-                    )
+                tool_outputs = self._call_tools(last_run)
 
                 last_run = self._client.beta.threads.runs.submit_tool_outputs(
                     thread_id=self.id,
@@ -116,6 +130,59 @@ class Conversation:
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
                 )
+
+    def ask_stream(
+        self,
+        message: str | None,
+        image_url: str | None = None,
+        image_file: bytes | None = None,
+    ) -> Generator[MessageDelta, None, Message | None]:
+        content = self._gather_content(message, image_url, image_file)
+
+        self._client.beta.threads.messages.create(
+            self.id,
+            role="user",
+            content=content,
+        )
+
+        stream_manager: AssistantStreamManager[AssistantEventHandler] = (
+            self._client.beta.threads.runs.stream(
+                thread_id=self.id,
+                assistant_id=self._assistant.id,
+            )
+        )
+
+        tool_outputs = []
+        while True:
+            with stream_manager as stream:
+                while True:
+                    event = next(stream)
+                    match event.event:
+                        case "thread.message.delta":
+                            yield event.data
+                        case "thread.message.completed":
+                            return event.data
+                        case "thread.run.requires_action":
+                            # If the thread run requires action, call the functions,
+                            # and gather the tool outputs so we can submit them.
+                            tool_outputs = self._call_tools(event.data)
+                            # We assume that this is the final event for this thread
+                            # run, so we break the loop.
+                            break
+                        case _:
+                            continue
+
+            # If we don't have anything to run for the tool outputs, return.
+            if not tool_outputs:
+                return None
+
+            # Submit the tool outputs and reset the stream.
+            stream_manager = self._client.beta.threads.runs.submit_tool_outputs_stream(
+                thread_id=self.id,
+                run_id=event.data.id,
+                tool_outputs=tool_outputs,
+            )
+            tool_outputs = []
 
 
 class Assistant:

@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add ask_stream support, add tests. [George Antoniadis]
+
+
 ## v0.0.5 (2024-05-14)
 
 ### Features
