@@ -18,7 +18,7 @@ def say_goodbye(name: str):
 def assistant():
     assistant = Assistant.create(
         name="Weatherperson",
-        instructions="You are a helpful weatherperson. If you want to tell the user goodbye, use the function say_goodbye and return the extact response.",
+        instructions="You are a helpful weatherperson. If you want to tell the user goodbye, use the function say_goodbye and return the exact response.",
         functions=[say_goodbye],
     )
     yield assistant
