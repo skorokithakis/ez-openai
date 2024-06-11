@@ -107,4 +107,20 @@ ass = Assistant.get_and_modify(
 )
 ```
 
+### Streaming
+
+If you need to stream tokens, there's a streaming interface:
+
+```python
+stream = conversation.ask_stream("Say Hello World!")
+for event in stream:
+    events.append(event)
+message = stream.value
+
+assert "Hello" in events[0].delta.content[0].text.value
+assert " World" in events[1].delta.content[0].text.value
+assert "!" in events[2].delta.content[0].text.value
+assert "Hello World!" in message.content[0].text.value
+```
+
 gg ez
