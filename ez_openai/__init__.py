@@ -17,6 +17,16 @@ from .decorator import openai_function  # noqa
 DEFAULT_MODEL = "gpt-4o"
 
 
+class EZGenerator:
+    def __init__(self, gen):
+        self.gen = gen
+        self.value = None
+
+    def __iter__(self):
+        self.value = yield from self.gen
+        return self.value
+
+
 class Conversation:
     """
     A conversation, with multiple messages.
@@ -186,14 +196,6 @@ class Conversation:
             tool_outputs = []
 
     def ask_stream(self, *args, **kwargs):
-        class EZGenerator:
-            def __init__(self, gen):
-                self.gen = gen
-
-            def __iter__(self):
-                self.value = yield from self.gen
-                return self.value
-
         return EZGenerator(self._ask_stream_generator(*args, **kwargs))
 
 

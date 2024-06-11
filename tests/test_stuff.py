@@ -51,12 +51,9 @@ def test_ask_stream(assistant):
     stream = conversation.ask_stream(
         'Repeat after me (skip the quotes): "Hello World!"'
     )
-    try:
-        while True:
-            event = next(stream)
-            events.append(event)
-    except StopIteration as e:
-        message = e.value
+    for event in stream:
+        events.append(event)
+    message = stream.value
 
     assert "Hello" in events[0].delta.content[0].text.value
     assert " World" in events[1].delta.content[0].text.value

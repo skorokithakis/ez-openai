@@ -5,6 +5,8 @@
 
 ### Features
 
+* Try to make the streaming API a bit prettier. [Stavros Korokithakis]
+
 * Add ask_stream support, add tests (#3) [George Antoniadis]
 
 
