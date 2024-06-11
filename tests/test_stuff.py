@@ -1,7 +1,10 @@
-import pytest
-from ez_openai import Assistant, openai_function
-from openai.types.beta.threads import Message
 from typing import List
+
+import pytest
+from openai.types.beta.threads import Message
+
+from ez_openai import Assistant
+from ez_openai import openai_function
 
 
 @openai_function(
@@ -20,6 +23,7 @@ def assistant():
         name="Weatherperson",
         instructions="You are a helpful weatherperson. If you want to tell the user goodbye, use the function say_goodbye and return the exact response.",
         functions=[say_goodbye],
+        model="gpt-4o",
     )
     yield assistant
     assistant.delete()
@@ -72,12 +76,9 @@ def test_ask_stream_function_call(assistant):
     message: Message = None
 
     stream = conversation.ask_stream("Hey, I'm Stavros. Goodbye.")
-    try:
-        while True:
-            event = next(stream)
-            events.append(event)
-    except StopIteration as e:
-        message = e.value
+    for event in stream:
+        events.append(event)
+    message = stream.value
 
     assert "Bye" in events[0].delta.content[0].text.value
     assert " bye" in events[1].delta.content[0].text.value

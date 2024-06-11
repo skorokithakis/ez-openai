@@ -1,15 +1,16 @@
 import json
 import os
 import time
-from typing import Callable, Any, Generator
-from openai.types.beta.threads import Message
-from openai.types.beta.threads import MessageDelta
-from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
-from openai.lib.streaming import AssistantStreamManager
-from openai.lib.streaming import AssistantEventHandler
-
+from typing import Any
+from typing import Callable
+from typing import Generator
 
 import openai
+from openai.lib.streaming import AssistantEventHandler
+from openai.lib.streaming import AssistantStreamManager
+from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
+from openai.types.beta.threads import Message
+from openai.types.beta.threads import MessageDelta
 
 from .decorator import openai_function  # noqa
 
@@ -131,7 +132,7 @@ class Conversation:
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
                 )
 
-    def ask_stream(
+    def _ask_stream_generator(
         self,
         message: str | None,
         image_url: str | None = None,
@@ -183,6 +184,17 @@ class Conversation:
                 tool_outputs=tool_outputs,
             )
             tool_outputs = []
+
+    def ask_stream(self, *args, **kwargs):
+        class EZGenerator:
+            def __init__(self, gen):
+                self.gen = gen
+
+            def __iter__(self):
+                self.value = yield from self.gen
+                return self.value
+
+        return EZGenerator(self._ask_stream_generator(*args, **kwargs))
 
 
 class Assistant:
