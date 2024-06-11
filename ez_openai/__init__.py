@@ -61,7 +61,7 @@ class Conversation:
         self._assistant._client.beta.threads.delete(self.id)
 
     def _gather_content(self, message, image_url, image_file):
-        """Gathers the content for a message to send to the OpenAI assistant."""
+        """Gather the content for a message to send to the OpenAI assistant."""
         content = []
         file = None
         if message is not None:
