@@ -80,8 +80,8 @@ class Conversation:
             )
         return content
 
-    def __call_tools(self, run: ThreadRunRequiresAction):
-        """Go through the requested tool calls, call the relevant functions, and return the results."""
+    def _call_tools(self, run: ThreadRunRequiresAction):
+        """Go through the tool calls requested by the AI, call the relevant functions, and return the results."""
         tool_outputs = []
         for fn_call in run.required_action.submit_tool_outputs.tool_calls:
             # Run the functions, one by one, and collect the results.
@@ -112,7 +112,7 @@ class Conversation:
                 time.sleep(1)
 
             if last_run.status == "requires_action":  # type: ignore[attr-defined]
-                tool_outputs = self.__call_tools(last_run)
+                tool_outputs = self._call_tools(last_run)
 
                 last_run = self._client.beta.threads.runs.submit_tool_outputs(
                     thread_id=self.id,
@@ -165,7 +165,7 @@ class Conversation:
                         case "thread.run.requires_action":
                             # If the thread run requires action, call the functions,
                             # and gather the tool outputs so we can submit them.
-                            tool_outputs = self.__call_tools(event.data)
+                            tool_outputs = self._call_tools(event.data)
                             # We assume that this is the final event for this thread
                             # run, so we break the loop.
                             break
