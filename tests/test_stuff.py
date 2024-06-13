@@ -55,10 +55,15 @@ def test_ask_stream(assistant):
         events.append(event)
     message = stream.value
 
-    assert "Hello" in events[0].delta.content[0].text.value
-    assert " World" in events[1].delta.content[0].text.value
-    assert "!" in events[2].delta.content[0].text.value
-    assert "Hello World!" in message.content[0].text.value
+    assert "Hello" in events[0].raw.content[0].text.value
+    assert " World" in events[1].raw.content[0].text.value
+    assert "!" in events[2].raw.content[0].text.value
+    assert "Hello World!" in message.raw.content[0].text.value
+
+    assert "Hello" in str(events[0])
+    assert " World" in str(events[1])
+    assert "!" in str(events[2])
+    assert "Hello World!" in str(message)
 
 
 def test_ask_function_call(assistant):
@@ -77,10 +82,18 @@ def test_ask_stream_function_call(assistant):
         events.append(event)
     message = stream.value
 
-    assert "Bye" in events[0].delta.content[0].text.value
-    assert " bye" in events[1].delta.content[0].text.value
-    assert " Stav" in events[2].delta.content[0].text.value
-    assert "ros" in events[3].delta.content[0].text.value
-    assert "!!!" in events[4].delta.content[0].text.value
-    assert "11" in events[5].delta.content[0].text.value
-    assert "Bye bye Stavros!!!11" in message.content[0].text.value
+    assert "Bye" in events[0].raw.content[0].text.value
+    assert " bye" in events[1].raw.content[0].text.value
+    assert " Stav" in events[2].raw.content[0].text.value
+    assert "ros" in events[3].raw.content[0].text.value
+    assert "!!!" in events[4].raw.content[0].text.value
+    assert "11" in events[5].raw.content[0].text.value
+    assert "Bye bye Stavros!!!11" in message.raw.content[0].text.value
+
+    assert "Bye" in str(events[0])
+    assert " bye" in str(events[1])
+    assert " Stav" in str(events[2])
+    assert "ros" in str(events[3])
+    assert "!!!" in str(events[4])
+    assert "11" in str(events[5])
+    assert "Bye bye Stavros!!!11" in str(message)

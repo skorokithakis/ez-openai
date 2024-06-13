@@ -9,8 +9,8 @@ import openai
 from openai.lib.streaming import AssistantEventHandler
 from openai.lib.streaming import AssistantStreamManager
 from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
-from openai.types.beta.threads import Message
-from openai.types.beta.threads import MessageDelta
+from openai.types.beta.threads import Message as openaiMessage
+from openai.types.beta.threads import MessageDelta as openaiMessageDelta
 
 from .decorator import openai_function  # noqa
 
@@ -25,6 +25,18 @@ class EZGenerator:
     def __iter__(self):
         self.value = yield from self.gen
         return self.value
+
+
+class EZMessage:
+    raw: openaiMessage | openaiMessageDelta
+
+    def __init__(self, raw: openaiMessage | openaiMessageDelta) -> None:
+        self.raw = raw
+
+    def __str__(self):
+        for content in self.raw.content:
+            if content.type == "text":
+                return content.text.value
 
 
 class Conversation:
@@ -147,7 +159,7 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
-    ) -> Generator[MessageDelta, None, Message | None]:
+    ) -> Generator[EZMessage, None, EZMessage | None]:
         content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(
@@ -170,9 +182,9 @@ class Conversation:
                     event = next(stream)
                     match event.event:
                         case "thread.message.delta":
-                            yield event.data
+                            yield EZMessage(event.data.delta)
                         case "thread.message.completed":
-                            return event.data
+                            return EZMessage(event.data)
                         case "thread.run.requires_action":
                             # If the thread run requires action, call the functions,
                             # and gather the tool outputs so we can submit them.
