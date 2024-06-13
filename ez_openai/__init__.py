@@ -118,7 +118,7 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
-    ) -> str:
+    ) -> EZMessage:
         content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(self.id, role="user", content=content)
@@ -147,8 +147,7 @@ class Conversation:
                 thread_messages = self._client.beta.threads.messages.list(
                     self._thread.id, limit=4
                 )
-                response = thread_messages.data[0].content[0].text.value
-                return response
+                return EZMessage(thread_messages.data[0])
             elif last_run.status == "failed":
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"

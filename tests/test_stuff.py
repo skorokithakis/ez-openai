@@ -37,9 +37,13 @@ def test_ask(assistant):
 
     image_url_cat = "https://images.pexels.com/photos/19640755/pexels-photo-19640755/free-photo-of-whtie-kitten-on-autumn-leaves.jpeg"
 
-    assert "hello" in conversation.ask("Say hello, please.").lower()
-    assert "dog" in conversation.ask("What animal is this?", image_file="tests/dog.jpg")
-    assert "cat" in conversation.ask("What animal is this?", image_url=image_url_cat)
+    assert "hello" in str(conversation.ask("Say hello, please.")).lower()
+    assert "dog" in str(
+        conversation.ask("What animal is this?", image_file="tests/dog.jpg")
+    )
+    assert "cat" in str(
+        conversation.ask("What animal is this?", image_url=image_url_cat)
+    )
 
 
 def test_ask_stream(assistant):
