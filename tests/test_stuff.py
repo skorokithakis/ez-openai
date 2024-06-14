@@ -34,16 +34,22 @@ def test_ask(assistant):
     assert assistant.id == assistant2.id
 
     conversation = assistant.conversation.create()
-
     image_url_cat = "https://images.pexels.com/photos/19640755/pexels-photo-19640755/free-photo-of-whtie-kitten-on-autumn-leaves.jpeg"
 
-    assert "hello" in str(conversation.ask("Say hello, please.")).lower()
-    assert "dog" in str(
-        conversation.ask("What animal is this?", image_file="tests/dog.jpg")
-    )
-    assert "cat" in str(
-        conversation.ask("What animal is this?", image_url=image_url_cat)
-    )
+    message = conversation.ask("Say hello, please.")
+    assert "hello" in message.text.lower()
+    assert "hello" in message.raw.content[0].text.value.lower()
+    assert "hello" in str(message).lower()
+
+    message = conversation.ask("What animal is this?", image_file="tests/dog.jpg")
+    assert "dog" in message.text.lower()
+    assert "dog" in message.raw.content[0].text.value.lower()
+    assert "dog" in str(message).lower()
+
+    message = conversation.ask("What animal is this?", image_url=image_url_cat)
+    assert "cat" in message.text.lower()
+    assert "cat" in message.raw.content[0].text.value.lower()
+    assert "cat" in str(message).lower()
 
 
 def test_ask_stream(assistant):
@@ -64,6 +70,11 @@ def test_ask_stream(assistant):
     assert "!" in events[2].raw.content[0].text.value
     assert "Hello World!" in message.raw.content[0].text.value
 
+    assert "Hello" in events[0].text
+    assert " World" in events[1].text
+    assert "!" in events[2].text
+    assert "Hello World!" in message.text
+
     assert "Hello" in str(events[0])
     assert " World" in str(events[1])
     assert "!" in str(events[2])
@@ -72,7 +83,10 @@ def test_ask_stream(assistant):
 
 def test_ask_function_call(assistant):
     conversation = assistant.conversation.create()
-    assert "Bye bye Stavros!!!11" in conversation.ask("Hey, I'm Stavros. Goodbye.")
+    message = conversation.ask("Hey, I'm Stavros. Goodbye.")
+    assert "Bye bye Stavros!!!11" in message.text
+    assert "Bye bye Stavros!!!11" in message.raw.content[0].text.value
+    assert "Bye bye Stavros!!!11" in str(message)
 
 
 def test_ask_stream_function_call(assistant):
@@ -93,6 +107,14 @@ def test_ask_stream_function_call(assistant):
     assert "!!!" in events[4].raw.content[0].text.value
     assert "11" in events[5].raw.content[0].text.value
     assert "Bye bye Stavros!!!11" in message.raw.content[0].text.value
+
+    assert "Bye" in events[0].text
+    assert " bye" in events[1].text
+    assert " Stav" in events[2].text
+    assert "ros" in events[3].text
+    assert "!!!" in events[4].text
+    assert "11" in events[5].text
+    assert "Bye bye Stavros!!!11" in message.text
 
     assert "Bye" in str(events[0])
     assert " bye" in str(events[1])

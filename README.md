@@ -5,7 +5,6 @@ ask ChatGPT about it, it will usually hallucinate a more reasonable API. So, I w
 this library, because if I had to manually poll for a tool update again I would
 instigate the robot uprising myself.
 
-
 ## Installation
 
 Run this somewhere:
@@ -13,7 +12,6 @@ Run this somewhere:
 ```
 pip install ez-openai
 ```
-
 
 ## Usage
 
@@ -76,7 +74,7 @@ conversation = ass.conversation.create()
 old_conversation = ass.conversation.get(old_conversation.id)
 
 # The library will handle all the background function calls itself:
-conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right now?")
+conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right now?").text
 > I'm getting the weather for Thessaloniki woooooo
 > I'm getting the weather for Athens woooooo
 > "The weather today in both Thessaloniki and Athens is quite similar, with a
@@ -85,11 +83,11 @@ conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right n
 
 # It also supports images:
 
-conversation.ask("What's in this image?", image_url="https://www.someimage.com/")
+conversation.ask("What's in this image?", image_url="https://www.someimage.com/").text
 
 # or:
 
-conversation.ask("What's in this image?", image_file="file.jpg")
+conversation.ask("What's in this image?", image_file="file.jpg").text
 ```
 
 Because assistants change (eg if you want to add some more functions), and it's tedious
@@ -107,6 +105,8 @@ ass = Assistant.get_and_modify(
 )
 ```
 
+Note: The raw OpenAI message is returned in `EZMessage`'s `raw` field.
+
 ### Streaming
 
 If you need to stream tokens, there's a streaming interface:
@@ -117,10 +117,10 @@ for event in stream:
     events.append(event)
 message = stream.value
 
-assert "Hello" in events[0].delta.content[0].text.value
-assert " World" in events[1].delta.content[0].text.value
-assert "!" in events[2].delta.content[0].text.value
-assert "Hello World!" in message.content[0].text.value
+assert "Hello" in events[0].text
+assert " World" in events[1].text
+assert "!" in events[2].text
+assert "Hello World!" in message.text
 ```
 
 gg ez

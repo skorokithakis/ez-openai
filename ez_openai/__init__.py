@@ -29,14 +29,23 @@ class EZGenerator:
 
 class EZMessage:
     raw: openaiMessage | openaiMessageDelta
+    text: str
 
     def __init__(self, raw: openaiMessage | openaiMessageDelta) -> None:
         self.raw = raw
+        self.text = _gather_text(raw)
 
     def __str__(self):
-        for content in self.raw.content:
-            if content.type == "text":
-                return content.text.value
+        return self.text
+
+
+def _gather_text(raw: openaiMessage | openaiMessageDelta):
+    """Gather the text from a message."""
+    for content in raw.content:
+        if content.type == "text":
+            return content.text.value
+
+    return ""
 
 
 class Conversation:
