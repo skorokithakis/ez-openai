@@ -5,7 +5,7 @@
 
 ### Features
 
-* Add ask_stream support, add tests. [George Antoniadis]
+* Add ask_stream support, add tests (#3) [George Antoniadis]
 
 
 ## v0.0.5 (2024-05-14)
