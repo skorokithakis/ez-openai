@@ -1,19 +1,51 @@
 import json
 import os
 import time
-from typing import Callable, Any, Generator
-from openai.types.beta.threads import Message
-from openai.types.beta.threads import MessageDelta
-from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
-from openai.lib.streaming import AssistantStreamManager
-from openai.lib.streaming import AssistantEventHandler
-
+from typing import Any
+from typing import Callable
+from typing import Generator
 
 import openai
+from openai.lib.streaming import AssistantEventHandler
+from openai.lib.streaming import AssistantStreamManager
+from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
+from openai.types.beta.threads import Message as openaiMessage
+from openai.types.beta.threads import MessageDelta as openaiMessageDelta
 
 from .decorator import openai_function  # noqa
 
 DEFAULT_MODEL = "gpt-4o"
+
+
+class EZGenerator:
+    def __init__(self, gen):
+        self.gen = gen
+        self.value = None
+
+    def __iter__(self):
+        self.value = yield from self.gen
+        return self.value
+
+
+class EZMessage:
+    raw: openaiMessage | openaiMessageDelta
+    text: str
+
+    def __init__(self, raw: openaiMessage | openaiMessageDelta) -> None:
+        self.raw = raw
+        self.text = _gather_text(raw)
+
+    def __str__(self):
+        return self.text
+
+
+def _gather_text(raw: openaiMessage | openaiMessageDelta):
+    """Gather the text from a message."""
+    for content in raw.content:
+        if content.type == "text":
+            return content.text.value
+
+    return ""
 
 
 class Conversation:
@@ -95,7 +127,7 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
-    ) -> str:
+    ) -> EZMessage:
         content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(self.id, role="user", content=content)
@@ -124,19 +156,18 @@ class Conversation:
                 thread_messages = self._client.beta.threads.messages.list(
                     self._thread.id, limit=4
                 )
-                response = thread_messages.data[0].content[0].text.value
-                return response
+                return EZMessage(thread_messages.data[0])
             elif last_run.status == "failed":
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
                 )
 
-    def ask_stream(
+    def _ask_stream_generator(
         self,
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
-    ) -> Generator[MessageDelta, None, Message | None]:
+    ) -> Generator[EZMessage, None, EZMessage | None]:
         content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(
@@ -159,9 +190,9 @@ class Conversation:
                     event = next(stream)
                     match event.event:
                         case "thread.message.delta":
-                            yield event.data
+                            yield EZMessage(event.data.delta)
                         case "thread.message.completed":
-                            return event.data
+                            return EZMessage(event.data)
                         case "thread.run.requires_action":
                             # If the thread run requires action, call the functions,
                             # and gather the tool outputs so we can submit them.
@@ -183,6 +214,9 @@ class Conversation:
                 tool_outputs=tool_outputs,
             )
             tool_outputs = []
+
+    def ask_stream(self, *args, **kwargs):
+        return EZGenerator(self._ask_stream_generator(*args, **kwargs))
 
 
 class Assistant:
