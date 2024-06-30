@@ -5,6 +5,8 @@
 
 ### Features
 
+* Add support for additional_instructions (#5) [George Antoniadis]
+
 * Unify responses across both ask and ask_stream. [George Antoniadis]
 
 * Simplify ask_stream response. [George Antoniadis]
