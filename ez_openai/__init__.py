@@ -129,7 +129,7 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
-        additional_instructions: Optional[str] = None,
+        additional_instructions: str | None = None,
     ) -> EZMessage:
         content = self._gather_content(message, image_url, image_file)
 
