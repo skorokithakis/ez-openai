@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.0.6 (2024-06-30)
 
 ### Features
 

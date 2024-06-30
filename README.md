@@ -32,6 +32,15 @@ ass = Assistant.create(
     instructions="You are a helpful weatherperson.",
 )
 
+# Create a conversation.
+conversation = ass.conversation.create()
+
+# Ask it something.
+reply = conversation.ask("How are you today?")
+
+print(reply.text)
+"I'm great, thank you! How can I assist you today?"
+
 # You can store the ID for later.
 assistant_id = ass.id
 
@@ -70,8 +79,10 @@ ass = Assistant.get("asst_O5ZAsccgOOtgjrcgHhUMloSA", functions=[get_weather])
 
 conversation = ass.conversation.create()
 
+
 # Similarly, you can store the ID to fetch later:
 old_conversation = ass.conversation.get(old_conversation.id)
+
 
 # The library will handle all the background function calls itself:
 conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right now?").text
@@ -81,12 +92,20 @@ conversation.ask("Hi, what's the weather like in Thessaloniki and Athens right n
    temperature of 26°C and a humidity level at 60%. Enjoy a pleasant and comfortable
    day!"
 
-# It also supports images:
 
+# You can give it additional instructions per-run:
+conversation.ask(
+    "What's the weather like in Thessaloniki?",
+    additional_instructions="When asked about the weather, make up something random."
+).text
+> "Right now in Thessaloniki, it's a pleasant day with clear skies, a gentle breeze,
+   and temperatures around 22°C. It's a nice day to explore the city's waterfront!"
+
+
+# It also supports images:
 conversation.ask("What's in this image?", image_url="https://www.someimage.com/").text
 
 # or:
-
 conversation.ask("What's in this image?", image_file="file.jpg").text
 ```
 
