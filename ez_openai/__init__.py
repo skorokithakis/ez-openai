@@ -7,6 +7,7 @@ from typing import Generator
 
 import openai
 from openai.lib.streaming import AssistantEventHandler
+from openai import NOT_GIVEN
 from openai.lib.streaming import AssistantStreamManager
 from openai.types.beta.assistant_stream_event import ThreadRunRequiresAction
 from openai.types.beta.threads import Message as openaiMessage
@@ -127,13 +128,16 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
+        additional_instructions: str | None = None,
     ) -> EZMessage:
         content = self._gather_content(message, image_url, image_file)
 
         self._client.beta.threads.messages.create(self.id, role="user", content=content)
 
         last_run = self._client.beta.threads.runs.create(
-            thread_id=self.id, assistant_id=self._assistant.id
+            thread_id=self.id,
+            assistant_id=self._assistant.id,
+            additional_instructions=additional_instructions or NOT_GIVEN,
         )
 
         while True:
@@ -167,6 +171,7 @@ class Conversation:
         message: str | None,
         image_url: str | None = None,
         image_file: bytes | None = None,
+        additional_instructions: str | None = None,
     ) -> Generator[EZMessage, None, EZMessage | None]:
         content = self._gather_content(message, image_url, image_file)
 
@@ -180,6 +185,7 @@ class Conversation:
             self._client.beta.threads.runs.stream(
                 thread_id=self.id,
                 assistant_id=self._assistant.id,
+                additional_instructions=additional_instructions or NOT_GIVEN,
             )
         )
 
