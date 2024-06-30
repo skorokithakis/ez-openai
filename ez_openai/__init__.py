@@ -4,7 +4,6 @@ import time
 from typing import Any
 from typing import Callable
 from typing import Generator
-from typing import Optional
 
 import openai
 from openai.lib.streaming import AssistantEventHandler
