@@ -29,10 +29,12 @@ class EZGenerator:
 
 
 class EZMessage:
+    id: str
     raw: openaiMessage | openaiMessageDelta
     text: str
 
-    def __init__(self, raw: openaiMessage | openaiMessageDelta) -> None:
+    def __init__(self, id: str, raw: openaiMessage | openaiMessageDelta):
+        self.id = id
         self.raw = raw
         self.text = _gather_text(raw)
 
@@ -160,7 +162,8 @@ class Conversation:
                 thread_messages = self._client.beta.threads.messages.list(
                     self._thread.id, limit=4
                 )
-                return EZMessage(thread_messages.data[0])
+                thread_message = thread_messages.data[0]
+                return EZMessage(thread_message.id, thread_message)
             elif last_run.status == "failed":
                 raise ValueError(
                     f"ERROR: Got unknown run status: {last_run.last_error.message}"
@@ -196,9 +199,9 @@ class Conversation:
                     event = next(stream)
                     match event.event:
                         case "thread.message.delta":
-                            yield EZMessage(event.data.delta)
+                            yield EZMessage(event.data.id, event.data.delta)
                         case "thread.message.completed":
-                            return EZMessage(event.data)
+                            return EZMessage(event.data.id, event.data)
                         case "thread.run.requires_action":
                             # If the thread run requires action, call the functions,
                             # and gather the tool outputs so we can submit them.
