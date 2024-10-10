@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Expose OpenAI message id in EZMessage. [George Antoniadis]
+
+
 ## v0.0.6 (2024-06-30)
 
 ### Features

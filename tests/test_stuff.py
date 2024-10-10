@@ -37,16 +37,19 @@ def test_ask(assistant):
     image_url_cat = "https://images.pexels.com/photos/19640755/pexels-photo-19640755/free-photo-of-whtie-kitten-on-autumn-leaves.jpeg"
 
     message = conversation.ask("Say hello, please.")
+    assert message.id.startswith("msg_")
     assert "hello" in message.text.lower()
     assert "hello" in message.raw.content[0].text.value.lower()
     assert "hello" in str(message).lower()
 
     message = conversation.ask("What animal is this?", image_file="tests/dog.jpg")
+    assert message.id.startswith("msg_")
     assert "dog" in message.text.lower()
     assert "dog" in message.raw.content[0].text.value.lower()
     assert "dog" in str(message).lower()
 
     message = conversation.ask("What animal is this?", image_url=image_url_cat)
+    assert message.id.startswith("msg_")
     assert "cat" in message.text.lower()
     assert "cat" in message.raw.content[0].text.value.lower()
     assert "cat" in str(message).lower()
@@ -62,6 +65,7 @@ def test_ask_addtional_instructions(assistant):
     message = conversation.ask(
         "Say hello, please.", additional_instructions="Reply in CAPS."
     )
+    assert message.id.startswith("msg_")
     assert "HELLO" in message.text
     assert "HELLO" in message.raw.content[0].text.value
     assert "HELLO" in str(message)
@@ -71,6 +75,7 @@ def test_ask_addtional_instructions(assistant):
         image_file="tests/dog.jpg",
         additional_instructions="Reply in CAPS.",
     )
+    assert message.id.startswith("msg_")
     assert "DOG" in message.text
     assert "DOG" in message.raw.content[0].text.value
     assert "DOG" in str(message)
@@ -80,6 +85,7 @@ def test_ask_addtional_instructions(assistant):
         image_url=image_url_cat,
         additional_instructions="Reply in CAPS.",
     )
+    assert message.id.startswith("msg_")
     assert "CAT" in message.text
     assert "CAT" in message.raw.content[0].text.value
     assert "CAT" in str(message)
@@ -88,6 +94,7 @@ def test_ask_addtional_instructions(assistant):
 def test_ask_stream(assistant):
     conversation = assistant.conversation.create()
 
+    ids: List[str] = []
     events: List[Message] = []
     message: Message = None
 
@@ -95,8 +102,15 @@ def test_ask_stream(assistant):
         'Repeat after me (skip the quotes): "Hello World!"'
     )
     for event in stream:
+        ids.append(event.id)
         events.append(event)
+
     message = stream.value
+
+    assert len(ids) == len(events)
+    for i in range(len(events)):
+        assert ids[i].startswith("msg_")
+        assert ids[i] == events[i].id
 
     assert "Hello" in events[0].raw.content[0].text.value
     assert " World" in events[1].raw.content[0].text.value
@@ -117,6 +131,7 @@ def test_ask_stream(assistant):
 def test_ask_stream_additional_instructions(assistant):
     conversation = assistant.conversation.create()
 
+    ids: List[str] = []
     events: List[Message] = []
     message: Message = None
 
@@ -125,8 +140,15 @@ def test_ask_stream_additional_instructions(assistant):
         additional_instructions="Reply in CAPS.",
     )
     for event in stream:
+        ids.append(event.id)
         events.append(event)
+
     message = stream.value
+
+    assert len(ids) == len(events)
+    for i in range(len(events)):
+        assert ids[i].startswith("msg_")
+        assert ids[i] == events[i].id
 
     assert "HEL" in events[0].raw.content[0].text.value
     assert "LO" in events[1].raw.content[0].text.value
@@ -158,13 +180,21 @@ def test_ask_function_call(assistant):
 def test_ask_stream_function_call(assistant):
     conversation = assistant.conversation.create()
 
+    ids: List[str] = []
     events: List[Message] = []
     message: Message = None
 
     stream = conversation.ask_stream("Hey, I'm Stavros. Goodbye.")
     for event in stream:
+        ids.append(event.id)
         events.append(event)
+
     message = stream.value
+
+    assert len(ids) == len(events)
+    for i in range(len(events)):
+        assert ids[i].startswith("msg_")
+        assert ids[i] == events[i].id
 
     assert "Bye" in events[0].raw.content[0].text.value
     assert " bye" in events[1].raw.content[0].text.value
