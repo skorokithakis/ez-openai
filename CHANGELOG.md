@@ -5,7 +5,7 @@
 
 ### Features
 
-* Expose OpenAI message id in EZMessage. [George Antoniadis]
+* Expose OpenAI message id in EZMessage (#6) [George Antoniadis]
 
 
 ## v0.0.6 (2024-06-30)
