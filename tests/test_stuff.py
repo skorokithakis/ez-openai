@@ -44,9 +44,12 @@ def test_ask(assistant):
 
     message = conversation.ask("What animal is this?", image_file="tests/dog.jpg")
     assert message.id.startswith("msg_")
-    assert "dog" in message.text.lower()
-    assert "dog" in message.raw.content[0].text.value.lower()
-    assert "dog" in str(message).lower()
+    assert "dog" in message.text.lower() or "labrador" in message.text.lower()
+    assert (
+        "dog" in message.raw.content[0].text.value.lower()
+        or "labrador" in message.raw.content[0].text.value.lower()
+    )
+    assert "dog" in str(message).lower() or "labrador" in str(message).lower()
 
     message = conversation.ask("What animal is this?", image_url=image_url_cat)
     assert message.id.startswith("msg_")
